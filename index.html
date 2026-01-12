@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>네이버 카페 게시자별 크롤러 - 파일 다운로드</title>
+    <style>
+        :root {
+            --color-primary: #1d8084;
+            --color-primary-hover: #165a5d;
+            --color-bg: #f5f5f5;
+            --color-surface: #ffffff;
+            --color-text: #1a1a1a;
+            --color-text-secondary: #666666;
+            --color-border: #e0e0e0;
+            --color-success: #4caf50;
+            --color-error: #f44336;
+            --color-warning: #ff9800;
+            --color-info: #2196f3;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+            color: white;
+            padding: 40px 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--color-surface);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--color-primary);
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--color-text-secondary);
+            margin-top: 5px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid var(--color-border);
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .file-section {
+            background: var(--color-surface);
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .file-section h3 {
+            font-size: 16px;
+            color: var(--color-primary);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--color-primary);
+        }
+
+        .file-list {
+            list-style: none;
+        }
+
+        .file-item {
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            border-left: 4px solid var(--color-primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .file-item:hover {
+            background: #f0f0f0;
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: var(--color-text);
+            margin-bottom: 3px;
+        }
+
+        .file-size {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-download {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .btn-download:hover {
+            background: var(--color-primary-hover);
+        }
+
+        .btn-view {
+            background: var(--color-info);
+            color: white;
+        }
+
+        .btn-view:hover {
+            background: #1976d2;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            border: 1px solid #17a2b8;
+            color: #0c5460;
+        }
+
+        .quick-start {
+            background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%);
+            border: 2px solid #ffc107;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .quick-start h3 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+
+        .quick-start ol {
+            margin-left: 20px;
+            color: #856404;
+        }
+
+        .quick-start li {
+            margin-bottom: 10px;
+        }
+
+        .code-block {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin: 10px 0;
+            overflow-x: auto;
+            border: 1px solid #333;
+        }
+
+        .download-all-btn {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            background: var(--color-success);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: background 0.2s;
+        }
+
+        .download-all-btn:hover {
+            background: #45a049;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 30px 20px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .file-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .file-actions {
+                width: 100%;
+                margin-top: 10px;
+            }
+
+            .btn {
+                flex: 1;
+            }
+        }
+
+        .copy-feedback {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--color-success);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 4px;
+            display: none;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 네이버 카페 게시자별 크롤러</h1>
+            <p>특정 게시자의 모든 게시물을 자동으로 수집하여 마크다운 파일로 저장합니다</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">11</div>
+                <div class="stat-label">총 파일 개수</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">2,636</div>
+                <div class="stat-label">총 줄 수</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">885</div>
+                <div class="stat-label">코드 줄 수</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">1,751</div>
+                <div class="stat-label">문서 줄 수</div>
+            </div>
+        </div>
+
+        <div class="quick-start">
+            <h3>⚡ 5분 빠른 시작</h3>
+            <ol>
+                <li><strong>설정 파일 다운로드:</strong> config.example.py 다운로드 후 config.py로 저장</li>
+                <li><strong>설정 수정:</strong> 네이버 ID, 카페 정보, 게시자 ID 입력</li>
+                <li><strong>패키지 설치:</strong> pip install -r requirements.txt</li>
+                <li><strong>실행:</strong> python crawler_with_config.py</li>
+                <li><strong>결과 확인:</strong> naver_cafe_articles 폴더에 MD 파일 생성</li>
+            </ol>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab(event, 'core')">🔧 핵심 파일</button>
+            <button class="tab-btn" onclick="switchTab(event, 'docs')">📚 문서</button>
+            <button class="tab-btn" onclick="switchTab(event, 'other')">📋 기타</button>
+        </div>
+
+        <!-- 핵심 파일 탭 -->
+        <div id="core" class="tab-content active">
+            <button class="download-all-btn" onclick="downloadAll('core')">📦 핵심 파일 다운로드</button>
+            
+            <div class="file-section">
+                <h3>🐍 Python 실행 파일</h3>
+                <ul class="file-list">
+                    <li class="file-item">
+                        <div class="file-info">
+                            <div class="file-name">naver_cafe_author_crawler.py</div>
+                            <div class="file-size">633줄 | 메인 크롤러 엔진</div>
+                        </div>
+                        <div class="file-actions">
+                            <button class="btn btn-download" onclick="downloadFile('naver_cafe_author_crawler.py')">⬇️ 다운</button>
+                        </div>
+                    </li>
+                    <li class="file-item">
+                        <div class="file-info">
+                            <div class="file-name">crawler_with_config.py</div>
+                            <div class="file-size">161줄 | 설정 기반 실행 스크립트</div>
+                        </div>
+                        <div class="file-actions">
+                            <button class="btn btn-download" onclick="downloadFile('crawler_with_config.py')">⬇️ 다운</button>
+                        </div>
+                    </li>
+                    <li class="file-item">
+                        <div class="file-info">
+                            <div class="file-name">config.example.py</div>
+                            <div class="file-size">91줄 | 설정 파일 템플릿</div>
+                        </div>
+                        <div class="file-actions">
+                            <button class="btn btn-download" onclick="downloadFile('config.example.py')">⬇️ 다운</button>
+                        </div>
+                    </li>
+                    <li class="file-item">
+                        <div class="file-info">
+                            <div class="file-name">requirements.txt</div>
+                            <div class="file-size">5줄 | Python 의존성</div>
+                        </div>
+                        <div class="file-actions">
+                            <button class="btn btn-download" onclick="downloadFile('requirements.txt')">⬇️ 다운</button>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 문서 탭 -->
+        <div id="docs" class="tab-content">
+            <button class="download-all-btn" onclick="downloadAll('docs')">📦 모든 문서 다운로드</button>
+            
+            <div class="file-section">
+                <h3>📖 사용 설명서</h3>
+                <ul class="file-list">
+                    <li class="file-item">
+                        <div class="file-info">
+                            <div class="file-name">README.md</div>
+                            <div class="file-size">339줄 | 완전한 사용 가이드</div>
+                        </div>
+                        <div class="file-actions">
+                            <button class="btn btn-download" onclick="downloadFile('README.md')">⬇️ 다운</button>
+                        </div>
+                    </li>
+                    <li class="file-item">
+                        <div class="file-info">
+                            <div class="file-name">QUICKSTART.md</div>
+                            <div class="file-size">166줄 | 5분 빠른 시작</div>
+                        </div>
+                        <div class="file-actions">
+                            <button class="btn btn-download" onclick="downloadFile('QUICKSTART.md')">⬇️ 다운</button>
+                        </div>
+                    </li>
+                    <li class="file-item">
+                        <div class="file-info">
+                            <div class="file-name">INSTALL.md</div>
+                            <div class="file-size">321줄 | 상세 설치 가이드</div>
+                        </div>
+                        <div class="file-actions">
+                            <button class="btn btn-download" onclick="downloadFile('INSTALL.md')">⬇️ 다운</button>
+                        </div>
+                    </li>
+                    <li class="file-item">
+                        <div class="file-info">
+                            <div class="file-name">PROJECT_SUMMARY.md</div>
+                            <div class="file-size">324줄 | 프로젝트 개요</div>
+                        </div>
+                        <div class="file-actions">
+                            <button class="btn btn-download" onclick="downloadFile('PROJECT_SUMMARY.md')">⬇️ 다운</button>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="file-section">
+                <h3>📁 추가 문서</h3>
+                <ul class="file-list">
+                    <li class="file-item">
+                        <div class="file-info">
+                            <div class="file-name">FILES_OVERVIEW.md</div>
+                            <div class="file-size">441줄 | 파일 구조 설명</div>
+                        </div>
+                        <div class="file-actions">
+                            <button class="btn btn-download" onclick="downloadFile('FILES_OVERVIEW.md')">⬇️ 다운</button>
+                        </div>
+                    </li>
+                    <li class="file-item">
+                        <div class="file-info">
+                            <div class="file-name">COMPLETION_REPORT.md</div>
+                            <div class="file-size">524줄 | 완성 보고서</div>
+                        </div>
+                        <div class="file-actions">
+                            <button class="btn btn-download" onclick="downloadFile('COMPLETION_REPORT.md')">⬇️ 다운</button>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 기타 탭 -->
+        <div id="other" class="tab-content">
+            <div class="file-section">
+                <h3>🔍 분석 및 보고</h3>
+                <ul class="file-list">
+                    <li class="file-item">
+                        <div class="file-info">
+                            <div class="file-name">code_analysis.md</div>
+                            <div class="file-size">36줄 | 원본 코드 분석</div>
+                        </div>
+                        <div class="file-actions">
+                            <button class="btn btn-download" onclick="downloadFile('code_analysis.md')">⬇️ 다운</button>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="alert alert-info">
+                <strong>💡 팁:</strong> 모든 파일을 한 번에 다운로드하려면 위의 탭에서 "다운로드" 버튼을 클릭하세요.
+            </div>
+        </div>
+
+        <div style="margin-top: 40px; padding: 20px; background: var(--color-surface); border-radius: 8px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+            <h3 style="color: var(--color-primary); margin-bottom: 15px;">📊 프로젝트 통계</h3>
+            <div class="stats-container">
+                <div>
+                    <strong>📈 코드 통계:</strong>
+                    <div class="code-block">메인 크롤러: 633줄
+설정 스크립트: 161줄
+설정 파일: 91줄
+────────────────
+총 코드: 885줄</div>
+                </div>
+                <div>
+                    <strong>📚 문서 통계:</strong>
+                    <div class="code-block">README: 339줄
+빠른 시작: 166줄
+설치 가이드: 321줄
+프로젝트 요약: 324줄
+파일 개요: 441줄
+────────────────
+총 문서: 1,751줄</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="copy-feedback" id="copyFeedback">✓ 다운로드되었습니다!</div>
+
+    <script>
+        const files = {
+            // 핵심 파일
+            'naver_cafe_author_crawler.py': 'https://raw.githubusercontent.com/kisoo95/Naver-cafe-crawling-ver240115/main/naver_cafe_author_crawler.py',
+            'crawler_with_config.py': 'https://raw.githubusercontent.com/kisoo95/Naver-cafe-crawling-ver240115/main/crawler_with_config.py',
+            'config.example.py': 'https://raw.githubusercontent.com/kisoo95/Naver-cafe-crawling-ver240115/main/config.example.py',
+            'requirements.txt': 'https://raw.githubusercontent.com/kisoo95/Naver-cafe-crawling-ver240115/main/requirements.txt',
+            // 문서
+            'README.md': 'https://raw.githubusercontent.com/kisoo95/Naver-cafe-crawling-ver240115/main/README.md',
+            'QUICKSTART.md': 'https://raw.githubusercontent.com/kisoo95/Naver-cafe-crawling-ver240115/main/QUICKSTART.md',
+            'INSTALL.md': 'https://raw.githubusercontent.com/kisoo95/Naver-cafe-crawling-ver240115/main/INSTALL.md',
+            'PROJECT_SUMMARY.md': 'https://raw.githubusercontent.com/kisoo95/Naver-cafe-crawling-ver240115/main/PROJECT_SUMMARY.md',
+            'FILES_OVERVIEW.md': 'https://raw.githubusercontent.com/kisoo95/Naver-cafe-crawling-ver240115/main/FILES_OVERVIEW.md',
+            'COMPLETION_REPORT.md': 'https://raw.githubusercontent.com/kisoo95/Naver-cafe-crawling-ver240115/main/COMPLETION_REPORT.md',
+            // 기타
+            'code_analysis.md': 'https://raw.githubusercontent.com/kisoo95/Naver-cafe-crawling-ver240115/main/code_analysis.md'
+        };
+
+        function switchTab(event, tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function downloadFile(filename) {
+            const url = files[filename];
+            if (!url) {
+                alert('파일을 찾을 수 없습니다: ' + filename);
+                return;
+            }
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showFeedback(`${filename} 다운로드 시작!`);
+        }
+
+        function downloadAll(category) {
+            let filesToDownload = [];
+            
+            if (category === 'core') {
+                filesToDownload = [
+                    'naver_cafe_author_crawler.py',
+                    'crawler_with_config.py',
+                    'config.example.py',
+                    'requirements.txt'
+                ];
+            } else if (category === 'docs') {
+                filesToDownload = [
+                    'README.md',
+                    'QUICKSTART.md',
+                    'INSTALL.md',
+                    'PROJECT_SUMMARY.md',
+                    'FILES_OVERVIEW.md',
+                    'COMPLETION_REPORT.md'
+                ];
+            }
+            
+            filesToDownload.forEach((file, index) => {
+                setTimeout(() => {
+                    downloadFile(file);
+                }, index * 300);
+            });
+            
+            showFeedback(`${filesToDownload.length}개 파일 다운로드 시작!`);
+        }
+
+        function showFeedback(message) {
+            const feedback = document.getElementById('copyFeedback');
+            feedback.textContent = message;
+            feedback.style.display = 'block';
+            setTimeout(() => {
+                feedback.style.display = 'none';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
